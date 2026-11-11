@@ -122,13 +122,13 @@ The Angular API base path is configured in
 path to the API using a local development proxy or a same-origin reverse proxy
 when integrating API calls. No API host or secret is embedded in the frontend.
 
-### Publish on a free VM
+### Publish with Oracle MySQL HeatWave
 
 The `deploy/` directory contains a Docker Compose stack for a Linux VM. It runs
-the Angular build behind Caddy, the Spring API, and MySQL with a persistent
-volume. Caddy obtains HTTPS certificates automatically, so Google OAuth and
-the session cookie use one HTTPS origin. Do not use the local H2 profile for a
-published app.
+the Angular build behind Caddy and the Spring API; the API connects to your
+managed Oracle MySQL HeatWave database. Caddy obtains HTTPS certificates
+automatically, so Google OAuth and the session cookie use one HTTPS origin. Do
+not use the local H2 profile for a published app.
 
 For a $0/month target, an Oracle Cloud Always Free Ampere VM is one option.
 The Always Free allocation currently includes up to 2 OCPUs, 12 GB RAM, and
@@ -136,26 +136,54 @@ The Always Free allocation currently includes up to 2 OCPUs, 12 GB RAM, and
 reclaim idle compute. Account verification and billing details may be required.
 Keep all resources inside the Always Free quotas and check the OCI cost
 estimator before creation; excess resources or networking can incur charges.
-A free DuckDNS hostname can supply the domain. You must control the hostname
+A free DuckDNS hostname can supply the web domain. You must control the hostname
 and keep it pointed at the VM's public address.
 
-On the VM, install Docker Engine and the Compose plugin, clone this repo, create
-`deploy/.env` from `deploy/.env.example`, and fill in unique database passwords,
-the Google client ID/rotated secret, and your DuckDNS hostname. Keep `.env`
-private. Configure the Google OAuth web client with the exact HTTPS origin
-`https://your-hostname` and redirect URI
-`https://your-hostname/login/oauth2/code/google`. Allow inbound TCP ports 80 and
-443 in OCI; restrict SSH to your own IP and do not expose MySQL port 3306.
+1. In OCI, open **Databases → MySQL HeatWave → DB systems → Create DB system**.
+  Choose **Development or testing**, **Standalone**, your app VM's VCN and a
+  private subnet. Select the `MySQL.Free` ECPU shape and confirm the estimate
+  remains within Always Free. This app only needs normal MySQL transactions;
+  it does not need a HeatWave analytics cluster. Keep the DB endpoint private.
+2. Record the DB system private IP and port from its details. Configure an NSG
+  or subnet rule allowing TCP 3306 **only from the app VM's private IP**. Do
+  not expose the database to the public internet. OCI documents DB endpoints
+  as private and requires a compute instance, VPN, Bastion, or similar path to
+  reach them.
+3. SSH into the app VM. Install Docker Engine, the Compose plugin, and a MySQL
+  client. From the VM, connect to the DB private IP as the DB administrator.
+  Create the app database and a dedicated account, using a long unique
+  password:
 
-From the repo root, start the stack with:
+  ```sql
+  CREATE DATABASE food_discovery CHARACTER SET utf8mb4;
+  CREATE USER 'foodapp'@'%' IDENTIFIED BY 'use-a-long-unique-password';
+  GRANT ALL PRIVILEGES ON food_discovery.* TO 'foodapp'@'%';
+  ```
+
+  The wildcard host is constrained by the private endpoint and OCI network
+  rule. For stricter access, replace `%` with the VM's private IP.
+4. Clone this repo on the VM. Create `deploy/.env` from
+  `deploy/.env.example`; set `DOMAIN` to your DuckDNS hostname, `DB_URL` to
+  `jdbc:mysql://<DB-private-IP>:3306/food_discovery?serverTimezone=UTC&sslMode=REQUIRED`,
+  and `DB_USERNAME`/`DB_PASSWORD` to the dedicated app account. Add the Google
+  client ID and rotated secret. Keep `.env` private.
+5. In Google Cloud Console, configure the OAuth web client with the exact
+  origin `https://<your-hostname>` and redirect URI
+  `https://<your-hostname>/login/oauth2/code/google`. Allow inbound TCP ports
+  80 and 443 in OCI; restrict SSH to your own IP. Do not open port 3306 to the
+  public internet.
+
+From the repo root on the VM, start the stack with:
 
 ```sh
 docker compose --env-file deploy/.env -f deploy/docker-compose.yml up -d --build
 ```
 
-The MySQL data volume survives container restarts and deployments, but it is
-not a backup. Make periodic SQL dumps and keep a copy outside the VM. This
-single-VM setup is suitable for a small personal project, not high availability.
+On first startup, Flyway creates the app's tables and seeds the sample dishes
+in HeatWave. Configure automatic backups in OCI and periodically test a
+restore. The free MySQL shape and VM are limited resources and can be subject
+to capacity availability or reclamation; this single-VM setup is for a small
+personal project, not high availability.
 
 ### Verification
 
@@ -184,6 +212,8 @@ valuable data; keep backups before applying future schema changes.
 - Storage credentials and production deployment are not configured.
 - The proposed deployment architecture and provider choices remain subject to
   checking each provider's current official limits and terms.
-#   f o o d - d i s c o v e r y - p l a t f o r m  
- #   f o o d - d i s c o v e r y - p l a t f o r m  
+#   f o o d - d i s c o v e r y - p l a t f o r m 
+ 
+ #   f o o d - d i s c o v e r y - p l a t f o r m 
+ 
  

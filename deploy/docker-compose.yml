@@ -1,38 +1,12 @@
 services:
-  mysql:
-    image: mysql:8.4
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: food_discovery
-      MYSQL_USER: ${DB_USERNAME:?Set DB_USERNAME in deploy/.env}
-      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in deploy/.env}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in deploy/.env}
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'mysqladmin ping -h localhost -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent',
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 30s
-    networks:
-      - app_network
-
   backend:
     build:
       context: ../backend-springboot
       dockerfile: Dockerfile
     restart: unless-stopped
-    depends_on:
-      mysql:
-        condition: service_healthy
     environment:
       SERVER_PORT: 8080
-      DB_URL: jdbc:mysql://mysql:3306/food_discovery?serverTimezone=UTC
+      DB_URL: ${DB_URL:?Set DB_URL in deploy/.env}
       DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME in deploy/.env}
       DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in deploy/.env}
       DB_POOL_SIZE: 5
@@ -67,7 +41,6 @@ services:
       - app_network
 
 volumes:
-  mysql_data:
   caddy_data:
   caddy_config:
 
