@@ -10,8 +10,6 @@ import jakarta.persistence.PrePersist;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "dish")
@@ -51,8 +49,7 @@ public class Dish {
 	@Column(name = "dietary_tags", nullable = false, length = 255)
 	private String dietaryTags;
 
-	@JdbcTypeCode(SqlTypes.BINARY)
-	@Column(name = "created_by", columnDefinition = "BINARY(16)")
+	@Column(name = "created_by")
 	private UUID createdById;
 
 	@Column(name = "created_at", nullable = false, updatable = false)

@@ -13,8 +13,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "app_user")
@@ -22,8 +20,7 @@ public class AppUser {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
-	@JdbcTypeCode(SqlTypes.BINARY)
-	@Column(name = "id", nullable = false, updatable = false, columnDefinition = "BINARY(16)")
+	@Column(name = "id", nullable = false, updatable = false)
 	private UUID id;
 
 	@Column(name = "google_subject", nullable = false, unique = true, updatable = false, length = 255)

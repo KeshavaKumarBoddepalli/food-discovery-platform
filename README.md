@@ -122,6 +122,42 @@ The Angular API base path is configured in
 path to the API using a local development proxy or a same-origin reverse proxy
 when integrating API calls. No API host or secret is embedded in the frontend.
 
+### Deploy with Render, Supabase, and Vercel
+
+This option uses the Render Free web service for the Spring Boot API, Supabase
+Free PostgreSQL for persistent data, and Vercel Hobby for the Angular static
+site. Free services can sleep or pause when inactive, have limited resources,
+and their provider limits can change. Do not use this configuration for an
+availability-critical production service.
+
+The backend has a `postgresql` Spring profile with its own Flyway migrations.
+Those migrations create the app tables and seed the sample dishes on first
+startup. The existing MySQL configuration and migrations remain available.
+
+1. In Render, create a **Web Service** from this repository. Set the root
+  directory to `backend-springboot` and use the included Dockerfile. Choose the
+  Free instance. Add the environment variables from
+  `backend-springboot/render-env.example` in the Render dashboard. Set
+  `DB_URL` to the Supabase **Session Pooler** JDBC URL, with `sslmode=require`;
+  set `DB_USERNAME` and `DB_PASSWORD` to the values shown by Supabase. Render
+  supplies `PORT`; the application uses it automatically.
+2. In Vercel, import the repository with `frontend-angularapp` as the root
+  directory. Use `npm run build` and publish `dist/frontend-angularapp/browser`.
+  After Render creates the backend URL, configure Vercel rewrites for
+  `/api/:path*`, `/oauth2/:path*`, `/login/oauth2/code/:path*`, and `/logout`
+  to that backend, preserving the path. This keeps API requests and the OAuth
+  callback on the Vercel origin so the session cookie works in the browser.
+3. Replace the Vercel URL placeholders in Render's environment variables. In
+  Google Cloud Console, allow `https://<your-vercel-app>.vercel.app` as an
+  authorized JavaScript origin and
+  `https://<your-vercel-app>.vercel.app/login/oauth2/code/google` as an
+  authorized redirect URI. Never put the Google client secret in Vercel or
+  frontend code.
+4. Deploy the Vercel site, then test browsing, Google sign-in, profile updates,
+  dish creation, and the health endpoint. Supabase Free projects may pause
+  after a week without activity, and Render Free web services sleep after
+  inactivity. Check each provider's current limits before relying on the app.
+
 ### Publish with Oracle MySQL HeatWave
 
 The `deploy/` directory contains a Docker Compose stack for a Linux VM. It runs

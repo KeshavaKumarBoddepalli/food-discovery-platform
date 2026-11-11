@@ -1,0 +1,11 @@
+SPRING_PROFILES_ACTIVE=postgresql
+DB_URL=jdbc:postgresql://<session-pooler-host>:5432/postgres?sslmode=require
+DB_USERNAME=postgres.<project-ref>
+DB_PASSWORD=replace-with-your-supabase-database-password
+FRONTEND_ORIGIN=https://<your-vercel-app>.vercel.app
+GOOGLE_OAUTH_ENABLED=true
+GOOGLE_CLIENT_ID=replace-with-your-google-web-client-id
+GOOGLE_CLIENT_SECRET=replace-with-your-google-client-secret
+GOOGLE_REDIRECT_URI=https://<your-vercel-app>.vercel.app/login/oauth2/code/google
+SESSION_COOKIE_SECURE=true
+SESSION_COOKIE_SAME_SITE=Lax
